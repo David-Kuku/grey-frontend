@@ -10,8 +10,12 @@ export interface DepositPayload {
 export const createDeposit = async (
   payload: DepositPayload,
 ): Promise<Deposit> => {
-  const { data } = await api.post<Deposit>("/deposits", payload, {
-    headers: { "Idempotency-Key": payload.idempotencyKey },
+  const refinedPayloadObj = {
+    currency: payload?.currency,
+    amount: Number(payload?.amount) * 100,
+  };
+  const { data } = await api.post<Deposit>("/deposits", refinedPayloadObj, {
+    headers: { "idempotency-key": payload.idempotencyKey },
   });
   return data;
 };

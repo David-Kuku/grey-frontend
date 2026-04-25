@@ -14,7 +14,8 @@ export interface AuthResponse {
 
 export interface CurrencyBalance {
   currency: Currency;
-  amount: string;
+  balance_minor: number;
+  balance: string;
 }
 
 export interface Wallet {
@@ -82,19 +83,17 @@ export type TransactionStatus =
 
 export interface Transaction {
   id: string;
-  type: TransactionType;
+  transaction_type: TransactionType;
   status: TransactionStatus;
   amount: string;
   currency: Currency;
-  targetCurrency?: Currency;
-  targetAmount?: string;
-  description: string;
-  createdAt: string;
+  created_at: string;
   metadata?: Record<string, unknown>;
+  user_id: string;
 }
 
 export interface PaginatedTransactions {
-  data: Transaction[];
+  transactions: Transaction[];
   page: number;
   limit: number;
   total: number;

@@ -1,12 +1,12 @@
-import { Link } from 'react-router-dom'
-import { useTransactionsView } from '../viewmodel/useTransactionsView'
-import { formatAmount } from '../../utils/currency'
-import { formatDate } from '../../utils/date'
-import StatusBadge from '../../components/StatusBadge'
-import type { Currency } from '../../types'
+import { Link } from "react-router-dom";
+import { useTransactionsView } from "../viewmodel/useTransactionsView";
+import { formatAmount } from "../../utils/currency";
+import { formatDate } from "../../utils/date";
+import StatusBadge from "../../components/StatusBadge";
+import type { Currency } from "../../types";
 
 export default function TransactionsPage() {
-  const { data, isLoading, page, setPage } = useTransactionsView()
+  const { data, isLoading, page, setPage } = useTransactionsView();
 
   return (
     <div>
@@ -15,14 +15,19 @@ export default function TransactionsPage() {
       {isLoading ? (
         <div className="space-y-2">
           {Array.from({ length: 5 }).map((_, i) => (
-            <div key={i} className="h-14 bg-gray-100 rounded-lg animate-pulse" />
+            <div
+              key={i}
+              className="h-14 bg-gray-100 rounded-lg animate-pulse"
+            />
           ))}
         </div>
-      ) : data?.data.length === 0 ? (
-        <div className="text-center py-16 text-gray-400 text-sm">No transactions found.</div>
+      ) : data?.transactions?.length === 0 ? (
+        <div className="text-center py-16 text-gray-400 text-sm">
+          No transactions found.
+        </div>
       ) : (
         <div className="bg-white rounded-xl border border-gray-200 divide-y divide-gray-100">
-          {data?.data.map((txn) => (
+          {data?.transactions?.map((txn) => (
             <Link
               key={txn.id}
               to={`/transactions/${txn.id}`}
@@ -30,16 +35,25 @@ export default function TransactionsPage() {
             >
               <div className="flex items-center gap-3">
                 <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center">
-                  <span className="text-xs font-medium">{txn.type[0].toUpperCase()}</span>
+                  <span className="text-xs font-medium">
+                    {txn?.transaction_type?.[0]?.toUpperCase()}
+                  </span>
                 </div>
                 <div>
-                  <p className="text-sm font-medium text-gray-900 capitalize">{txn.type}</p>
-                  <p className="text-xs text-gray-400">{formatDate(txn.createdAt)}</p>
+                  <p className="text-sm font-medium text-gray-900 capitalize">
+                    {txn?.transaction_type}
+                  </p>
+                  <p className="text-xs text-gray-400">
+                    {formatDate(txn?.created_at)}
+                  </p>
                 </div>
               </div>
               <div className="text-right space-y-0.5">
                 <p className="text-sm font-medium text-gray-900">
-                  {formatAmount(txn.amount, txn.currency as Currency)}
+                  {formatAmount(
+                    Number(txn.amount) / 100,
+                    txn.currency as Currency,
+                  )}
                 </p>
                 <StatusBadge status={txn.status} />
               </div>
@@ -68,5 +82,5 @@ export default function TransactionsPage() {
         </div>
       )}
     </div>
-  )
+  );
 }

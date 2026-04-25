@@ -88,6 +88,7 @@ export default function PayoutPage() {
               onChange={setRecipientField("accountNumber")}
               className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900"
               placeholder="10-digit account number"
+              minLength={10}
             />
           </div>
 
@@ -102,6 +103,7 @@ export default function PayoutPage() {
               onChange={setRecipientField("bankCode")}
               className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900"
               placeholder="e.g. 058"
+              minLength={3}
             />
           </div>
 

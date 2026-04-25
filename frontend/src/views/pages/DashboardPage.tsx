@@ -7,7 +7,7 @@ import type { Currency } from "../../types";
 
 export default function DashboardPage() {
   const { wallet, walletLoading, txns, txnsLoading } = useDashboardView();
-
+  console.log(txns);
   return (
     <div className="space-y-8">
       <div>
@@ -23,7 +23,7 @@ export default function DashboardPage() {
           </div>
         ) : (
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
-            {wallet?.balances.map((b) => (
+            {wallet?.balances?.map((b) => (
               <div
                 key={b.currency}
                 className="bg-white rounded-xl border border-gray-200 p-4"
@@ -32,7 +32,7 @@ export default function DashboardPage() {
                   {b.currency}
                 </p>
                 <p className="text-lg font-semibold text-gray-900">
-                  {formatAmount(b.amount, b.currency as Currency)}
+                  {formatAmount(b.balance, b.currency as Currency)}
                 </p>
               </div>
             ))}
@@ -62,7 +62,7 @@ export default function DashboardPage() {
               />
             ))}
           </div>
-        ) : txns?.data.length === 0 ? (
+        ) : txns?.transactions?.length === 0 ? (
           <div className="text-center py-12 text-gray-400 text-sm">
             No transactions yet.{" "}
             <Link to="/deposit" className="text-gray-900 underline">
@@ -72,7 +72,7 @@ export default function DashboardPage() {
           </div>
         ) : (
           <div className="bg-white rounded-xl border border-gray-200 divide-y divide-gray-100">
-            {txns?.data.map((txn) => (
+            {txns?.transactions?.map((txn) => (
               <Link
                 key={txn.id}
                 to={`/transactions/${txn.id}`}
@@ -80,22 +80,27 @@ export default function DashboardPage() {
               >
                 <div className="flex items-center gap-3">
                   <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center">
-                    <span className="text-xs">{txn.type[0].toUpperCase()}</span>
+                    <span className="text-xs">
+                      {txn?.transaction_type?.[0]?.toUpperCase()}
+                    </span>
                   </div>
                   <div>
                     <p className="text-sm font-medium text-gray-900 capitalize">
-                      {txn.type}
+                      {txn?.transaction_type}
                     </p>
                     <p className="text-xs text-gray-400">
-                      {formatDate(txn.createdAt)}
+                      {formatDate(txn?.created_at)}
                     </p>
                   </div>
                 </div>
                 <div className="text-right">
                   <p className="text-sm font-medium text-gray-900">
-                    {formatAmount(txn.amount, txn.currency as Currency)}
+                    {formatAmount(
+                      Number(txn?.amount) / 100,
+                      txn?.currency as Currency,
+                    )}
                   </p>
-                  <StatusBadge status={txn.status} />
+                  <StatusBadge status={txn?.status} />
                 </div>
               </Link>
             ))}

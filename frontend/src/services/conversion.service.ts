@@ -10,9 +10,14 @@ export interface QuotePayload {
 export const getQuote = async (
   payload: QuotePayload,
 ): Promise<ConversionQuote> => {
+  const refinedPayloadObj = {
+    source_currency: payload?.sourceCurrency,
+    target_currency: payload?.targetCurrency,
+    source_amount: Number(payload?.amountIn) * 100,
+  };
   const { data } = await api.post<ConversionQuote>(
     "/conversions/quote",
-    payload,
+    refinedPayloadObj,
   );
   return data;
 };

@@ -14,7 +14,9 @@ export const payoutKeys = {
 export const useCreatePayout = () => {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (payload: PayoutPayload) => createPayout(payload),
+    mutationFn: (payload: PayoutPayload) => {
+      return createPayout(payload);
+    },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: walletKeys.all });
       qc.invalidateQueries({ queryKey: transactionKeys.all });
