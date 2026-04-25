@@ -102,7 +102,7 @@ erDiagram
     }
     wallets {
         uuid id PK
-        uuid user_id FK_UK
+        uuid user_id FK,UK
     }
     wallet_balances {
         uuid wallet_id FK
@@ -138,7 +138,7 @@ erDiagram
     }
     payouts {
         uuid id PK
-        uuid transaction_id FK_UK
+        uuid transaction_id FK,UK
         payout_status status
         text recipient_name
         text recipient_bank_code
@@ -191,20 +191,6 @@ Codes: `VALIDATION_ERROR`, `INVALID_CREDENTIALS`, `EMAIL_EXISTS`, `INSUFFICIENT_
 
 ---
 
-## Tests
-
-| Test                          | What it proves                                                   |
-| ----------------------------- | ---------------------------------------------------------------- |
-| `TestLedgerBalancesCorrectly` | Multiple deposits sum correctly across currencies                |
-| `TestDepositIdempotency`      | Same key → same transaction, balance moves once                  |
-| `TestConcurrentConversions`   | 5 goroutines race; at most 1 succeeds, balance never negative    |
-| `TestExpiredQuoteRejection`   | Expired quote → 410 Gone + `QUOTE_EXPIRED`                       |
-| `TestFailedPayoutReversal`    | Failure triggers reversal, balance restored                      |
-| `TestLedgerReconciliation`    | Cached balance == `SUM(signed_amount)` for every wallet+currency |
-| `TestInsufficientBalance`     | Payout on zero balance → 422                                     |
-
----
-
 ## Trade-offs
 
 **FX rates:** Frankfurter (free, no key). Production: paid provider + Redis cache with single-flight pattern.
@@ -240,26 +226,37 @@ Codes: `VALIDATION_ERROR`, `INVALID_CREDENTIALS`, `EMAIL_EXISTS`, `INSUFFICIENT_
 ## Project Structure
 
 ```
-kite/
-├── cmd/api/main.go              # Entry point
-├── internal/
-│   ├── auth/                    # JWT + bcrypt
-│   ├── config/                  # Env-based config
-│   ├── fx/                      # FX rates, caching, quoting
-│   ├── handlers/                # HTTP handlers (one per domain)
-│   ├── ledger/                  # Double-entry ledger service
-│   ├── middleware/              # Auth, request ID, logging
-│   ├── models/                  # Domain types + DTOs
-│   ├── payout/                  # State machine + simulation
-│   ├── repository/             # All DB operations
-│   └── server/                  # Router + DI wiring
-├── migrations/                  # SQL schema
-├── tests/                       # Integration tests
-├── frontend/                    # React + TanStack Query
-├── docker-compose.yml
-├── Dockerfile
-├── Makefile
-└── README.md
+grey-frontend/                         # Monorepo root
+├── frontend/                          # React + Vite
+│   └── src/
+│       ├── components/                # Shared UI components
+│       ├── queries/                   # TanStack Query hooks
+│       ├── services/                  # Axios API clients
+│       ├── store/                     # Zustand auth store
+│       ├── types/                     # Shared TypeScript types
+│       ├── utils/                     # Currency, date, idempotency
+│       └── views/
+│           ├── pages/                 # Pure JSX page components
+│           └── viewmodel/             # Hooks with all page logic (MVVM)
+└── grey-backend/                      # Go API
+    ├── cmd/api/main.go                # Entry point
+    ├── internal/
+    │   ├── auth/                      # JWT + bcrypt
+    │   ├── config/                    # Env-based config
+    │   ├── fx/                        # FX rates, caching, quoting
+    │   ├── handlers/                  # HTTP handlers (one per domain)
+    │   ├── ledger/                    # Double-entry ledger service
+    │   ├── middleware/                # Auth, request ID, rate limiting
+    │   ├── models/                    # Domain types + DTOs
+    │   ├── payout/                    # State machine + simulation
+    │   ├── repository/                # All DB operations (sqlx)
+    │   └── server/                    # Router + DI wiring
+    ├── migrations/                    # SQL schema
+    ├── tests/                         # Integration tests
+    ├── docker-compose.yml
+    ├── Dockerfile
+    ├── Makefile
+    └── README.md
 ```
 
 ## Loom Walkthrough
