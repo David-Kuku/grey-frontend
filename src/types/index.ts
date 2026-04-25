@@ -102,6 +102,6 @@ export interface PaginatedTransactions {
 }
 
 export interface ApiError {
-  error: string;
-  details?: Record<string, string>;
+  message: string;
+  code: number;
 }

@@ -8,23 +8,19 @@ import {
 import { setToken, removeToken } from "../utils/auth";
 
 export const useLogin = () => {
-  const qc = useQueryClient();
   return useMutation({
     mutationFn: (payload: LoginPayload) => login(payload),
     onSuccess: (data) => {
       setToken(data.token);
-      qc.setQueryData(["me"], data.user);
     },
   });
 };
 
 export const useSignup = () => {
-  const qc = useQueryClient();
   return useMutation({
     mutationFn: (payload: SignupPayload) => signup(payload),
     onSuccess: (data) => {
       setToken(data.token);
-      qc.setQueryData(["me"], data.user);
     },
   });
 };
