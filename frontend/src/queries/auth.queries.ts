@@ -14,19 +14,14 @@ export const useLogin = () => {
     mutationFn: (payload: LoginPayload) => login(payload),
     onSuccess: (data) => {
       setToken(data.token);
-      setUser(data.user);
+      setUser({ id: data?.user.id });
     },
   });
 };
 
 export const useSignup = () => {
-  const setUser = useAuthStore((s) => s.setUser);
   return useMutation({
     mutationFn: (payload: SignupPayload) => signup(payload),
-    onSuccess: (data) => {
-      setToken(data.token);
-      setUser(data.user);
-    },
   });
 };
 

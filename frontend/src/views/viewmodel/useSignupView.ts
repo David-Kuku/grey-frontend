@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { toast } from "sonner";
 import { useSignup } from "../../queries/auth.queries";
 
 export const useSignupView = () => {
@@ -14,7 +15,12 @@ export const useSignupView = () => {
 
   const handleSubmit = (e: React.SubmitEvent<HTMLFormElement>) => {
     e.preventDefault();
-    mutate(form, { onSuccess: () => navigate("/") });
+    mutate(form, {
+      onSuccess: () => {
+        toast.success("Account created successfully");
+        navigate("/");
+      },
+    });
   };
 
   const set = (field: keyof typeof form) => {

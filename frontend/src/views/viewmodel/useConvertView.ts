@@ -1,5 +1,6 @@
 import { useCallback, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { toast } from 'sonner'
 import { useGetQuote, useExecuteConversion } from '../../queries/conversion.queries'
 import type { ConversionQuote, Currency } from '../../types'
 
@@ -29,7 +30,12 @@ export function useConvertView() {
 
   function handleExecute() {
     if (!quote) return
-    execute(quote.quote_id, { onSuccess: () => navigate('/') })
+    execute(quote.quote_id, {
+      onSuccess: () => {
+        toast.success('Conversion successful')
+        navigate('/')
+      },
+    })
   }
 
   const handleExpire = useCallback(() => setExpired(true), [])
