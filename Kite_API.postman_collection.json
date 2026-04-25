@@ -1,0 +1,1040 @@
+{
+  "info": {
+    "name": "Kite — Multi-Currency Wallet API",
+    "description": "End-to-end test flow for the Kite cross-border payments prototype.\n\n## Test Flow\n1. Sign up → auto-sets token\n2. Deposit USD, NGN, GBP\n3. Check balances\n4. Get FX quote (USD → EUR)\n5. Execute quote → auto-uses quote_id\n6. Check balances again\n7. Create NGN payout\n8. Wait 5-7s for payout simulation\n9. Check transaction history\n10. Verify balances reconcile\n\n## Setup\nSet `base_url` variable to your API (default: http://localhost:8080/api/v1)",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:8080/api/v1"
+    },
+    {
+      "key": "token",
+      "value": ""
+    },
+    {
+      "key": "quote_id",
+      "value": ""
+    },
+    {
+      "key": "user_email",
+      "value": "testuser@kite.test"
+    },
+    {
+      "key": "user_password",
+      "value": "password123"
+    },
+    {
+      "key": "transaction_id",
+      "value": ""
+    }
+  ],
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{token}}",
+        "type": "string"
+      }
+    ]
+  },
+  "item": [
+    {
+      "name": "1. Auth",
+      "item": [
+        {
+          "name": "1a. Signup",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const res = pm.response.json();",
+                  "",
+                  "pm.test('Status is 201', () => pm.response.to.have.status(201));",
+                  "pm.test('Has token', () => pm.expect(res.token).to.be.a('string'));",
+                  "pm.test('Has user with email', () => pm.expect(res.user.email).to.eql(pm.collectionVariables.get('user_email')));",
+                  "",
+                  "if (res.token) {",
+                  "  pm.collectionVariables.set('token', res.token);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{user_email}}\",\n  \"password\": \"{{user_password}}\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/signup",
+              "host": ["{{base_url}}"],
+              "path": ["auth", "signup"]
+            }
+          }
+        },
+        {
+          "name": "1b. Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const res = pm.response.json();",
+                  "",
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Has token', () => pm.expect(res.token).to.be.a('string'));",
+                  "",
+                  "if (res.token) {",
+                  "  pm.collectionVariables.set('token', res.token);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{user_email}}\",\n  \"password\": \"{{user_password}}\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/login",
+              "host": ["{{base_url}}"],
+              "path": ["auth", "login"]
+            }
+          }
+        },
+        {
+          "name": "1c. Signup — duplicate email (expect 409)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 409 Conflict', () => pm.response.to.have.status(409));",
+                  "pm.test('Error code is EMAIL_EXISTS', () => {",
+                  "  pm.expect(pm.response.json().code).to.eql('EMAIL_EXISTS');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{user_email}}\",\n  \"password\": \"{{user_password}}\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/signup",
+              "host": ["{{base_url}}"],
+              "path": ["auth", "signup"]
+            }
+          }
+        },
+        {
+          "name": "1d. Login — wrong password (expect 401)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 401', () => pm.response.to.have.status(401));",
+                  "pm.test('Error code is INVALID_CREDENTIALS', () => {",
+                  "  pm.expect(pm.response.json().code).to.eql('INVALID_CREDENTIALS');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{user_email}}\",\n  \"password\": \"wrongpassword\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/login",
+              "host": ["{{base_url}}"],
+              "path": ["auth", "login"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "2. Deposits",
+      "item": [
+        {
+          "name": "2a. Deposit 1000.00 USD",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const res = pm.response.json();",
+                  "",
+                  "pm.test('Status is 201', () => pm.response.to.have.status(201));",
+                  "pm.test('Currency is USD', () => pm.expect(res.currency).to.eql('USD'));",
+                  "pm.test('Balance is 100000', () => pm.expect(res.new_balance).to.eql(100000));",
+                  "pm.test('Transaction status is successful', () => pm.expect(res.transaction.status).to.eql('successful'));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"currency\": \"USD\",\n  \"amount\": 100000,\n  \"idempotency_key\": \"dep-usd-001\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/deposits",
+              "host": ["{{base_url}}"],
+              "path": ["deposits"]
+            }
+          }
+        },
+        {
+          "name": "2b. Deposit 500000.00 NGN (5000 naira)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const res = pm.response.json();",
+                  "",
+                  "pm.test('Status is 201', () => pm.response.to.have.status(201));",
+                  "pm.test('Currency is NGN', () => pm.expect(res.currency).to.eql('NGN'));",
+                  "pm.test('Balance is 50000000', () => pm.expect(res.new_balance).to.eql(50000000));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"currency\": \"NGN\",\n  \"amount\": 50000000,\n  \"idempotency_key\": \"dep-ngn-001\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/deposits",
+              "host": ["{{base_url}}"],
+              "path": ["deposits"]
+            }
+          }
+        },
+        {
+          "name": "2c. Deposit 500.00 GBP",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const res = pm.response.json();",
+                  "",
+                  "pm.test('Status is 201', () => pm.response.to.have.status(201));",
+                  "pm.test('Currency is GBP', () => pm.expect(res.currency).to.eql('GBP'));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"currency\": \"GBP\",\n  \"amount\": 50000,\n  \"idempotency_key\": \"dep-gbp-001\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/deposits",
+              "host": ["{{base_url}}"],
+              "path": ["deposits"]
+            }
+          }
+        },
+        {
+          "name": "2d. Deposit USD — IDEMPOTENCY TEST (same key)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const res = pm.response.json();",
+                  "",
+                  "pm.test('Status is 200 (not 201 — idempotent replay)', () => pm.response.to.have.status(200));",
+                  "pm.test('Balance still 100000 (not doubled)', () => pm.expect(res.new_balance).to.eql(100000));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"currency\": \"USD\",\n  \"amount\": 100000,\n  \"idempotency_key\": \"dep-usd-001\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/deposits",
+              "host": ["{{base_url}}"],
+              "path": ["deposits"]
+            }
+          }
+        },
+        {
+          "name": "2e. Deposit — bad currency (expect 400)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 400', () => pm.response.to.have.status(400));",
+                  "pm.test('Has validation error', () => {",
+                  "  pm.expect(pm.response.json().code).to.eql('VALIDATION_ERROR');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"currency\": \"BTC\",\n  \"amount\": 100000,\n  \"idempotency_key\": \"dep-bad-001\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/deposits",
+              "host": ["{{base_url}}"],
+              "path": ["deposits"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "3. Balances",
+      "item": [
+        {
+          "name": "3a. Get all balances",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const res = pm.response.json();",
+                  "",
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Has 5 currencies', () => pm.expect(res.balances).to.have.length(5));",
+                  "",
+                  "const usd = res.balances.find(b => b.currency === 'USD');",
+                  "const ngn = res.balances.find(b => b.currency === 'NGN');",
+                  "const gbp = res.balances.find(b => b.currency === 'GBP');",
+                  "const eur = res.balances.find(b => b.currency === 'EUR');",
+                  "",
+                  "pm.test('USD = 100000', () => pm.expect(usd.balance_minor).to.eql(100000));",
+                  "pm.test('NGN = 50000000', () => pm.expect(ngn.balance_minor).to.eql(50000000));",
+                  "pm.test('GBP = 50000', () => pm.expect(gbp.balance_minor).to.eql(50000));",
+                  "pm.test('EUR = 0', () => pm.expect(eur.balance_minor).to.eql(0));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/wallet/balances",
+              "host": ["{{base_url}}"],
+              "path": ["wallet", "balances"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "4. FX Conversion",
+      "item": [
+        {
+          "name": "4a. Get quote: USD → EUR (500.00 USD)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const res = pm.response.json();",
+                  "",
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Has quote_id', () => pm.expect(res.quote_id).to.be.a('string'));",
+                  "pm.test('Source is USD', () => pm.expect(res.source_currency).to.eql('USD'));",
+                  "pm.test('Target is EUR', () => pm.expect(res.target_currency).to.eql('EUR'));",
+                  "pm.test('Source amount is 50000', () => pm.expect(res.source_amount).to.eql(50000));",
+                  "pm.test('Target amount > 0', () => pm.expect(res.target_amount).to.be.above(0));",
+                  "pm.test('Market rate != quoted rate (spread applied)', () => {",
+                  "  pm.expect(res.market_rate).to.not.eql(res.quoted_rate);",
+                  "});",
+                  "pm.test('Expires in ~30s', () => pm.expect(res.expires_in_seconds).to.be.within(25, 31));",
+                  "",
+                  "if (res.quote_id) {",
+                  "  pm.collectionVariables.set('quote_id', res.quote_id);",
+                  "}",
+                  "",
+                  "console.log('Market rate:', res.market_rate);",
+                  "console.log('Quoted rate:', res.quoted_rate);",
+                  "console.log('You send:', res.source_amount, res.source_currency);",
+                  "console.log('You get:', res.target_amount, res.target_currency);",
+                  "console.log('Fee:', res.fee_amount, res.fee_currency);"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"source_currency\": \"USD\",\n  \"target_currency\": \"EUR\",\n  \"source_amount\": 50000\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/conversions/quote",
+              "host": ["{{base_url}}"],
+              "path": ["conversions", "quote"]
+            }
+          }
+        },
+        {
+          "name": "4b. Execute quote",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const res = pm.response.json();",
+                  "",
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Transaction is successful', () => pm.expect(res.transaction.status).to.eql('successful'));",
+                  "pm.test('USD balance decreased', () => pm.expect(res.source_balance).to.be.below(100000));",
+                  "pm.test('EUR balance increased', () => pm.expect(res.target_balance).to.be.above(0));",
+                  "",
+                  "console.log('USD remaining:', res.source_balance);",
+                  "console.log('EUR received:', res.target_balance);"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"quote_id\": \"{{quote_id}}\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/conversions/execute",
+              "host": ["{{base_url}}"],
+              "path": ["conversions", "execute"]
+            }
+          }
+        },
+        {
+          "name": "4c. Execute same quote again (expect 409)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 409 Conflict', () => pm.response.to.have.status(409));",
+                  "pm.test('Error is QUOTE_ALREADY_EXECUTED', () => {",
+                  "  pm.expect(pm.response.json().code).to.eql('QUOTE_ALREADY_EXECUTED');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"quote_id\": \"{{quote_id}}\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/conversions/execute",
+              "host": ["{{base_url}}"],
+              "path": ["conversions", "execute"]
+            }
+          }
+        },
+        {
+          "name": "4d. Quote — same currency (expect 400)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 400', () => pm.response.to.have.status(400));",
+                  "pm.test('Validation error', () => {",
+                  "  pm.expect(pm.response.json().code).to.eql('VALIDATION_ERROR');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"source_currency\": \"USD\",\n  \"target_currency\": \"USD\",\n  \"source_amount\": 10000\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/conversions/quote",
+              "host": ["{{base_url}}"],
+              "path": ["conversions", "quote"]
+            }
+          }
+        },
+        {
+          "name": "4e. Quote — insufficient balance (expect 422)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 422', () => pm.response.to.have.status(422));",
+                  "pm.test('Error is INSUFFICIENT_BALANCE', () => {",
+                  "  pm.expect(pm.response.json().code).to.eql('INSUFFICIENT_BALANCE');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"source_currency\": \"KES\",\n  \"target_currency\": \"USD\",\n  \"source_amount\": 9999999999\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/conversions/quote",
+              "host": ["{{base_url}}"],
+              "path": ["conversions", "quote"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "5. Payouts",
+      "item": [
+        {
+          "name": "5a. Create NGN payout (1000 naira)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const res = pm.response.json();",
+                  "",
+                  "pm.test('Status is 201', () => pm.response.to.have.status(201));",
+                  "pm.test('Payout status is pending', () => pm.expect(res.payout.status).to.eql('pending'));",
+                  "pm.test('Transaction status is pending', () => pm.expect(res.transaction.status).to.eql('pending'));",
+                  "pm.test('Balance decreased', () => pm.expect(res.new_balance).to.eql(50000000 - 100000));",
+                  "",
+                  "console.log('Payout ID:', res.payout.id);",
+                  "console.log('NGN balance after payout:', res.new_balance);",
+                  "console.log('⏳ Payout will transition: pending → processing → success/fail over ~5s');"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"source_currency\": \"NGN\",\n  \"amount\": 100000,\n  \"recipient_name\": \"Ade Johnson\",\n  \"recipient_bank_code\": \"058\",\n  \"recipient_account\": \"0123456789\",\n  \"idempotency_key\": \"payout-ngn-001\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/payouts",
+              "host": ["{{base_url}}"],
+              "path": ["payouts"]
+            }
+          }
+        },
+        {
+          "name": "5b. Payout — idempotency (same key, expect 200)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 200 (idempotent)', () => pm.response.to.have.status(200));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"source_currency\": \"NGN\",\n  \"amount\": 100000,\n  \"recipient_name\": \"Ade Johnson\",\n  \"recipient_bank_code\": \"058\",\n  \"recipient_account\": \"0123456789\",\n  \"idempotency_key\": \"payout-ngn-001\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/payouts",
+              "host": ["{{base_url}}"],
+              "path": ["payouts"]
+            }
+          }
+        },
+        {
+          "name": "5c. Payout — insufficient balance (expect 422)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 422', () => pm.response.to.have.status(422));",
+                  "pm.test('Error is INSUFFICIENT_BALANCE', () => {",
+                  "  pm.expect(pm.response.json().code).to.eql('INSUFFICIENT_BALANCE');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"source_currency\": \"KES\",\n  \"amount\": 9999999999,\n  \"recipient_name\": \"Test\",\n  \"recipient_bank_code\": \"001\",\n  \"recipient_account\": \"111111\",\n  \"idempotency_key\": \"payout-fail-001\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/payouts",
+              "host": ["{{base_url}}"],
+              "path": ["payouts"]
+            }
+          }
+        },
+        {
+          "name": "5d. Payout — unsupported currency (expect 400)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 400', () => pm.response.to.have.status(400));",
+                  "pm.test('Validation error for currency', () => {",
+                  "  const res = pm.response.json();",
+                  "  pm.expect(res.code).to.eql('VALIDATION_ERROR');",
+                  "  pm.expect(res.details.source_currency).to.include('NGN and KES');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"source_currency\": \"USD\",\n  \"amount\": 10000,\n  \"recipient_name\": \"Test\",\n  \"recipient_bank_code\": \"001\",\n  \"recipient_account\": \"111111\",\n  \"idempotency_key\": \"payout-usd-001\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/payouts",
+              "host": ["{{base_url}}"],
+              "path": ["payouts"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "6. Transaction History",
+      "item": [
+        {
+          "name": "6a. Get transactions (page 1)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const res = pm.response.json();",
+                  "",
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Has transactions array', () => pm.expect(res.transactions).to.be.an('array'));",
+                  "pm.test('Has pagination', () => {",
+                  "  pm.expect(res.page).to.eql(1);",
+                  "  pm.expect(res.total_count).to.be.above(0);",
+                  "});",
+                  "pm.test('Transactions are reverse chronological', () => {",
+                  "  if (res.transactions.length > 1) {",
+                  "    const first = new Date(res.transactions[0].created_at);",
+                  "    const second = new Date(res.transactions[1].created_at);",
+                  "    pm.expect(first.getTime()).to.be.at.least(second.getTime());",
+                  "  }",
+                  "});",
+                  "",
+                  "if (res.transactions && res.transactions.length > 0) {",
+                  "  pm.collectionVariables.set('transaction_id', res.transactions[0].id);",
+                  "}",
+                  "",
+                  "console.log('Total transactions:', res.total_count);",
+                  "res.transactions.forEach(tx => {",
+                  "  console.log(`  ${tx.type} | ${tx.status} | ${tx.amount_formatted || tx.currency}`);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/transactions?page=1&page_size=20",
+              "host": ["{{base_url}}"],
+              "path": ["transactions"],
+              "query": [
+                { "key": "page", "value": "1" },
+                { "key": "page_size", "value": "20" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "6b. Get transaction by ID",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const res = pm.response.json();",
+                  "",
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Has transaction id', () => pm.expect(res.id).to.be.a('string'));",
+                  "pm.test('Has amount_formatted', () => pm.expect(res.amount_formatted).to.be.a('string'));",
+                  "pm.test('ID matches requested', () => {",
+                  "  pm.expect(res.id).to.eql(pm.collectionVariables.get('transaction_id'));",
+                  "});",
+                  "",
+                  "console.log(`Transaction: ${res.type} | ${res.status} | ${res.amount_formatted}`);"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/transactions/{{transaction_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["transactions", "{{transaction_id}}"]
+            }
+          }
+        },
+        {
+          "name": "6c. Get transaction — bogus ID (expect 404)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 404', () => pm.response.to.have.status(404));",
+                  "pm.test('Error is TRANSACTION_NOT_FOUND', () => {",
+                  "  pm.expect(pm.response.json().code).to.eql('TRANSACTION_NOT_FOUND');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/transactions/00000000-0000-0000-0000-000000000000",
+              "host": ["{{base_url}}"],
+              "path": ["transactions", "00000000-0000-0000-0000-000000000000"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "7. Post-Payout Verification",
+      "description": "Run these after waiting ~7 seconds for the payout simulation to complete.",
+      "item": [
+        {
+          "name": "7a. Final balances (after payout settles)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const res = pm.response.json();",
+                  "",
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "",
+                  "const ngn = res.balances.find(b => b.currency === 'NGN');",
+                  "const eur = res.balances.find(b => b.currency === 'EUR');",
+                  "",
+                  "// NGN: 50000000 - 100000 = 49900000 if payout succeeded",
+                  "// NGN: 50000000 if payout failed and reversed",
+                  "pm.test('NGN balance is valid (49900000 or 50000000)', () => {",
+                  "  pm.expect([49900000, 50000000]).to.include(ngn.balance_minor);",
+                  "});",
+                  "",
+                  "pm.test('EUR balance > 0 (from conversion)', () => {",
+                  "  pm.expect(eur.balance_minor).to.be.above(0);",
+                  "});",
+                  "",
+                  "pm.test('No negative balances', () => {",
+                  "  res.balances.forEach(b => {",
+                  "    pm.expect(b.balance_minor).to.be.at.least(0);",
+                  "  });",
+                  "});",
+                  "",
+                  "console.log('Final balances:');",
+                  "res.balances.forEach(b => console.log(`  ${b.currency}: ${b.balance}`));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/wallet/balances",
+              "host": ["{{base_url}}"],
+              "path": ["wallet", "balances"]
+            }
+          }
+        },
+        {
+          "name": "7b. Final transaction history",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const res = pm.response.json();",
+                  "",
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "",
+                  "const types = res.transactions.map(t => t.type);",
+                  "pm.test('Has deposit transactions', () => pm.expect(types).to.include('deposit'));",
+                  "pm.test('Has conversion transaction', () => pm.expect(types).to.include('conversion'));",
+                  "pm.test('Has payout transaction', () => pm.expect(types).to.include('payout'));",
+                  "",
+                  "console.log('All transactions:');",
+                  "res.transactions.forEach(tx => {",
+                  "  console.log(`  ${tx.type} | ${tx.status} | ${tx.description}`);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/transactions?page=1&page_size=50",
+              "host": ["{{base_url}}"],
+              "path": ["transactions"],
+              "query": [
+                { "key": "page", "value": "1" },
+                { "key": "page_size", "value": "50" }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "8. Error Cases",
+      "item": [
+        {
+          "name": "8a. No auth token (expect 401)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 401', () => pm.response.to.have.status(401));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/wallet/balances",
+              "host": ["{{base_url}}"],
+              "path": ["wallet", "balances"]
+            }
+          }
+        },
+        {
+          "name": "8b. Bogus token (expect 401)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 401', () => pm.response.to.have.status(401));",
+                  "pm.test('Error code is INVALID_TOKEN', () => {",
+                  "  pm.expect(pm.response.json().code).to.eql('INVALID_TOKEN');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "not.a.real.jwt.token", "type": "string" }]
+            },
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/wallet/balances",
+              "host": ["{{base_url}}"],
+              "path": ["wallet", "balances"]
+            }
+          }
+        },
+        {
+          "name": "8c. Execute bogus quote ID (expect 404)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 404', () => pm.response.to.have.status(404));",
+                  "pm.test('Error is QUOTE_NOT_FOUND', () => {",
+                  "  pm.expect(pm.response.json().code).to.eql('QUOTE_NOT_FOUND');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"quote_id\": \"00000000-0000-0000-0000-000000000000\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/conversions/execute",
+              "host": ["{{base_url}}"],
+              "path": ["conversions", "execute"]
+            }
+          }
+        },
+        {
+          "name": "8d. Health check (no auth needed)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Status is ok', () => {",
+                  "  pm.expect(pm.response.json().status).to.eql('ok');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/health",
+              "host": ["{{base_url}}"],
+              "path": ["health"]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}
