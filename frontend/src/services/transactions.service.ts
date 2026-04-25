@@ -1,5 +1,5 @@
 import api from "./api";
-import type { PaginatedTransactions, Transaction } from "../types";
+import type { PaginatedTransactions, TransactionSummary } from "../types";
 
 export interface TransactionsParams {
   page?: number;
@@ -15,7 +15,7 @@ export const getTransactions = async (
   return data;
 };
 
-export const getTransaction = async (id: string): Promise<Transaction> => {
-  const { data } = await api.get<Transaction>(`/transactions/${id}`);
+export const getTransaction = async (id: string): Promise<TransactionSummary> => {
+  const { data } = await api.get<TransactionSummary>(`/transactions/${id}`);
   return data;
 };

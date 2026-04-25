@@ -10,30 +10,34 @@ export const useTransactionDetailView = () => {
   const navigate = useNavigate();
   const { data: txn, isLoading, error } = useTransaction(id!);
 
+  const meta = txn?.metadata as Record<string, unknown> | undefined;
+  const targetCurrency = meta?.target_currency as Currency | undefined;
+  const targetAmount = meta?.target_amount as number | undefined;
+
   const rows: [string, React.ReactNode][] = txn
     ? [
         ["ID", <span className="font-mono text-xs">{txn.id}</span>],
-        ["Type", <span className="capitalize">{txn.type}</span>],
+        ["Type", <span className="capitalize">{txn.transaction_type}</span>],
         ["Status", <StatusBadge status={txn.status} />],
-        ["Amount", formatAmount(txn.amount, txn.currency as Currency)],
-        ...(txn.targetCurrency
+        ["Amount", formatAmount(txn.amount / 100, txn.currency as Currency)],
+        ...(targetCurrency && targetAmount !== undefined
           ? [
               [
                 "Converted to",
-                formatAmount(txn.targetAmount!, txn.targetCurrency as Currency),
+                formatAmount(targetAmount / 100, targetCurrency),
               ] as [string, React.ReactNode],
             ]
           : []),
         ["Currency", txn.currency],
-        ["Date", formatDate(txn.createdAt)],
+        ["Date", formatDate(txn.created_at)],
       ]
     : [];
 
-  if (txn?.metadata) {
-    const meta = txn.metadata as Record<string, string>;
-    if (meta.accountName) rows.push(["Recipient", meta.accountName]);
-    if (meta.accountNumber) rows.push(["Account", meta.accountNumber]);
-    if (meta.bankCode) rows.push(["Bank code", meta.bankCode]);
+  if (meta) {
+    const m = meta as Record<string, string>;
+    if (m.recipient_name) rows.push(["Recipient", m.recipient_name]);
+    if (m.recipient_account) rows.push(["Account", m.recipient_account]);
+    if (m.recipient_bank) rows.push(["Bank code", m.recipient_bank]);
   }
 
   return { txn, isLoading, error, navigate, rows };

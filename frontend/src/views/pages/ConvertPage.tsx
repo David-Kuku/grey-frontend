@@ -120,7 +120,7 @@ export default function ConvertPage() {
                 </span>
               ) : (
                 <QuoteCountdown
-                  expiresAt={quote.expiresAt}
+                  expiresAt={quote.expires_at}
                   onExpire={handleExpire}
                 />
               )}
@@ -131,35 +131,35 @@ export default function ConvertPage() {
             <div className="flex justify-between">
               <span className="text-gray-500">You send</span>
               <span className="font-medium">
-                {formatAmount(quote.amountIn, quote.sourceCurrency)}
+                {formatAmount(quote.source_amount / 100, quote.source_currency)}
               </span>
             </div>
             <div className="flex justify-between">
               <span className="text-gray-500">You receive</span>
               <span className="font-medium text-green-700">
-                {formatAmount(quote.amountOut, quote.targetCurrency)}
+                {formatAmount(quote.target_amount / 100, quote.target_currency)}
               </span>
             </div>
             <div className="flex justify-between">
               <span className="text-gray-500">Rate</span>
               <span className="text-gray-700">
-                1 {quote.sourceCurrency} = {parseFloat(quote.rate).toFixed(4)}{" "}
-                {quote.targetCurrency}
+                1 {quote.source_currency} = {parseFloat(quote.quoted_rate).toFixed(4)}{" "}
+                {quote.target_currency}
               </span>
             </div>
             <div className="flex justify-between">
               <span className="text-gray-500">Fee</span>
               <span className="text-gray-700">
-                {formatAmount(quote.fee, quote.sourceCurrency)}
+                {formatAmount(quote.fee_amount / 100, quote.source_currency)}
               </span>
             </div>
             <div className="flex justify-between text-xs text-gray-400">
               <span>Quote ID</span>
-              <span className="font-mono">{quote.id.slice(0, 8)}…</span>
+              <span className="font-mono">{quote.quote_id.slice(0, 8)}…</span>
             </div>
             <div className="flex justify-between text-xs text-gray-400">
               <span>Expires</span>
-              <span>{formatDate(quote.expiresAt)}</span>
+              <span>{formatDate(quote.expires_at)}</span>
             </div>
           </div>
 

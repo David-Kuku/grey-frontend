@@ -1,5 +1,5 @@
 import api from "./api";
-import type { Currency, ConversionQuote, Conversion } from "../types";
+import type { Currency, ConversionQuote, ConversionResponse } from "../types";
 
 export interface QuotePayload {
   sourceCurrency: Currency;
@@ -24,9 +24,9 @@ export const getQuote = async (
 
 export const executeConversion = async (
   quoteId: string,
-): Promise<Conversion> => {
-  const { data } = await api.post<Conversion>("/conversions/execute", {
-    quoteId,
+): Promise<ConversionResponse> => {
+  const { data } = await api.post<ConversionResponse>("/conversions/execute", {
+    quote_id: quoteId,
   });
   return data;
 };

@@ -1,5 +1,5 @@
 import api from "./api";
-import type { Currency, Payout, RecipientDetails } from "../types";
+import type { Currency, PayoutResponse, RecipientDetails } from "../types";
 
 export interface PayoutPayload {
   sourceCurrency: Currency;
@@ -8,7 +8,7 @@ export interface PayoutPayload {
   idempotencyKey: string;
 }
 
-export const createPayout = async (payload: PayoutPayload): Promise<Payout> => {
+export const createPayout = async (payload: PayoutPayload): Promise<PayoutResponse> => {
   const refinedPayloadObj = {
     source_currency: payload?.sourceCurrency,
     amount: Number(payload?.amount) * 100,
@@ -17,13 +17,8 @@ export const createPayout = async (payload: PayoutPayload): Promise<Payout> => {
     recipient_account: payload?.recipient?.accountNumber,
   };
 
-  const { data } = await api.post<Payout>("/payouts", refinedPayloadObj, {
+  const { data } = await api.post<PayoutResponse>("/payouts", refinedPayloadObj, {
     headers: { "idempotency-key": payload.idempotencyKey },
   });
-  return data;
-};
-
-export const getPayout = async (id: string): Promise<Payout> => {
-  const { data } = await api.get<Payout>(`/payouts/${id}`);
   return data;
 };
