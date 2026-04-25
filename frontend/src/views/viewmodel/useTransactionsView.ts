@@ -1,11 +1,28 @@
 import { useState } from "react";
 import { useTransactions } from "../../queries/transaction.queries";
 
-const PAGE_SIZE = 20;
+export const PAGE_SIZE_OPTIONS = [5, 10, 20, 50] as const;
 
 export const useTransactionsView = () => {
   const [page, setPage] = useState(1);
-  const { data, isLoading } = useTransactions({ page, limit: PAGE_SIZE });
+  const [limit, setLimit] = useState<number>(20);
+  const { data, isLoading, isFetching } = useTransactions({
+    page,
+    page_size: limit,
+  });
 
-  return { data, isLoading, page, setPage };
+  const handleLimitChange = (newLimit: number) => {
+    setLimit(newLimit);
+    setPage(1);
+  };
+
+  return {
+    data,
+    isLoading,
+    isFetching,
+    page,
+    setPage,
+    limit,
+    handleLimitChange,
+  };
 };

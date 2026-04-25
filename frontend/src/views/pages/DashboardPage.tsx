@@ -7,7 +7,6 @@ import type { Currency } from "../../types";
 
 export default function DashboardPage() {
   const { wallet, walletLoading, txns, txnsLoading } = useDashboardView();
-  console.log(txns);
   return (
     <div className="space-y-8">
       <div>

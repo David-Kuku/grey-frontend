@@ -95,9 +95,9 @@ export interface Transaction {
 export interface PaginatedTransactions {
   transactions: Transaction[];
   page: number;
-  limit: number;
-  total: number;
-  hasMore: boolean;
+  page_size: number;
+  total_count: number;
+  has_more: boolean;
 }
 
 export interface ApiError {

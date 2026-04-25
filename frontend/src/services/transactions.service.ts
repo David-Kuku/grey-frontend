@@ -3,7 +3,7 @@ import type { PaginatedTransactions, Transaction } from "../types";
 
 export interface TransactionsParams {
   page?: number;
-  limit?: number;
+  page_size?: number;
 }
 
 export const getTransactions = async (
