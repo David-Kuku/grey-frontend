@@ -1,14 +1,14 @@
-import { useTransactionDetailView } from '../viewmodel/useTransactionDetailView'
+import { useTransactionDetailView } from "../viewmodel/useTransactionDetailView";
 
 export default function TransactionDetailPage() {
-  const { txn, isLoading, error, navigate, rows } = useTransactionDetailView()
+  const { txn, isLoading, error, navigate, rows } = useTransactionDetailView();
 
   if (isLoading) {
     return (
       <div className="max-w-md">
         <div className="h-48 bg-gray-100 rounded-xl animate-pulse" />
       </div>
-    )
+    );
   }
 
   if (error || !txn) {
@@ -18,7 +18,7 @@ export default function TransactionDetailPage() {
           Transaction not found.
         </div>
       </div>
-    )
+    );
   }
 
   return (
@@ -30,16 +30,21 @@ export default function TransactionDetailPage() {
         ← Back
       </button>
 
-      <h2 className="text-xl font-semibold text-gray-900 mb-6 capitalize">{txn.type} detail</h2>
+      <h2 className="text-xl font-semibold text-gray-900 mb-6 capitalize">
+        {txn.transaction_type} detail
+      </h2>
 
       <div className="bg-white rounded-xl border border-gray-200 divide-y divide-gray-100">
         {rows.map(([label, value]) => (
-          <div key={label} className="flex items-start justify-between px-4 py-3">
+          <div
+            key={label}
+            className="flex items-start justify-between px-4 py-3"
+          >
             <span className="text-sm text-gray-500 w-32 shrink-0">{label}</span>
             <span className="text-sm text-gray-900 text-right">{value}</span>
           </div>
         ))}
       </div>
     </div>
-  )
+  );
 }
