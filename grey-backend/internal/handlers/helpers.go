@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"github.com/David-Kuku/grey-frontend/grey-backend/internal/models"
+	"github.com/David-Kuku/kuku-kite-app/grey-backend/internal/models"
 )
 func respondJSON(w http.ResponseWriter, status int, data interface{}) {
 	w.Header().Set("Content-Type", "application/json")

@@ -9,8 +9,8 @@ A cross-border payments prototype with a double-entry ledger, FX conversion engi
 ## Quick Start
 
 ```bash
-git clone https://github.com/David-Kuku/grey-frontend.git
-cd grey-frontend ( pardon me, i originally named the mono repo grey-frontend cos i was initially planning on having two different repos, but this is the repo housing the FE and BE)
+git clone https://github.com/David-Kuku/kuku-kite-app.git
+cd kuku-kite-app
 docker compose up --build
 ```
 
@@ -25,26 +25,6 @@ Seed a demo account:
 cd grey-backend && make seed
 # Login: demo@kite.test / password123
 ```
-
-## Running Without Docker
-
-Run each in a separate terminal from the monorepo root:
-
-```bash
-# Terminal 1 — Backend
-# Requires Postgres on port 5434 and Redis on port 6379 running locally
-psql "postgres://kite:kite@localhost:5434/kite?sslmode=disable" -f grey-backend/migrations/001_initial_schema.sql
-cp grey-backend/.env.example grey-backend/.env
-cd grey-backend && go run ./cmd/api
-```
-
-```bash
-# Terminal 2 — Frontend
-cd frontend && npm install && npm run dev
-```
-
-- Frontend: `http://localhost:5173`
-- API: `http://localhost:8080`
 
 ## Running Tests
 

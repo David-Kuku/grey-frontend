@@ -4,8 +4,8 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/David-Kuku/grey-frontend/grey-backend/internal/models"
-	"github.com/David-Kuku/grey-frontend/grey-backend/internal/repository"
+	"github.com/David-Kuku/kuku-kite-app/grey-backend/internal/models"
+	"github.com/David-Kuku/kuku-kite-app/grey-backend/internal/repository"
 	"github.com/google/uuid"
 	"github.com/jmoiron/sqlx"
 )

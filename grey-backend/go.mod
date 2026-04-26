@@ -1,4 +1,4 @@
-module github.com/David-Kuku/grey-frontend/grey-backend
+module github.com/David-Kuku/kuku-kite-app/grey-backend
 
 go 1.22
 

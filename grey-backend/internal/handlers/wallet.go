@@ -8,9 +8,9 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
 
-	"github.com/David-Kuku/grey-frontend/grey-backend/internal/middleware"
-	"github.com/David-Kuku/grey-frontend/grey-backend/internal/models"
-	"github.com/David-Kuku/grey-frontend/grey-backend/internal/repository"
+	"github.com/David-Kuku/kuku-kite-app/grey-backend/internal/middleware"
+	"github.com/David-Kuku/kuku-kite-app/grey-backend/internal/models"
+	"github.com/David-Kuku/kuku-kite-app/grey-backend/internal/repository"
 )
 
 type WalletHandler struct {

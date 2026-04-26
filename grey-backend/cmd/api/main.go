@@ -11,8 +11,8 @@ import (
 	_ "github.com/lib/pq"
 	"github.com/redis/go-redis/v9"
 
-	"github.com/David-Kuku/grey-frontend/grey-backend/internal/config"
-	"github.com/David-Kuku/grey-frontend/grey-backend/internal/server"
+	"github.com/David-Kuku/kuku-kite-app/grey-backend/internal/config"
+	"github.com/David-Kuku/kuku-kite-app/grey-backend/internal/server"
 )
 
 func main() {

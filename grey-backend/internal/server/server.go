@@ -12,14 +12,14 @@ import (
 	"github.com/redis/go-redis/v9"
 	"golang.org/x/time/rate"
 
-	"github.com/David-Kuku/grey-frontend/grey-backend/internal/auth"
-	"github.com/David-Kuku/grey-frontend/grey-backend/internal/config"
-	"github.com/David-Kuku/grey-frontend/grey-backend/internal/fx"
-	"github.com/David-Kuku/grey-frontend/grey-backend/internal/handlers"
-	"github.com/David-Kuku/grey-frontend/grey-backend/internal/ledger"
-	appMiddleware "github.com/David-Kuku/grey-frontend/grey-backend/internal/middleware"
-	"github.com/David-Kuku/grey-frontend/grey-backend/internal/payout"
-	"github.com/David-Kuku/grey-frontend/grey-backend/internal/repository"
+	"github.com/David-Kuku/kuku-kite-app/grey-backend/internal/auth"
+	"github.com/David-Kuku/kuku-kite-app/grey-backend/internal/config"
+	"github.com/David-Kuku/kuku-kite-app/grey-backend/internal/fx"
+	"github.com/David-Kuku/kuku-kite-app/grey-backend/internal/handlers"
+	"github.com/David-Kuku/kuku-kite-app/grey-backend/internal/ledger"
+	appMiddleware "github.com/David-Kuku/kuku-kite-app/grey-backend/internal/middleware"
+	"github.com/David-Kuku/kuku-kite-app/grey-backend/internal/payout"
+	"github.com/David-Kuku/kuku-kite-app/grey-backend/internal/repository"
 )
 
 type Server struct {

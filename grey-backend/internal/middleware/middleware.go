@@ -7,8 +7,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/David-Kuku/grey-frontend/grey-backend/internal/auth"
-	"github.com/David-Kuku/grey-frontend/grey-backend/internal/models"
+	"github.com/David-Kuku/kuku-kite-app/grey-backend/internal/auth"
+	"github.com/David-Kuku/kuku-kite-app/grey-backend/internal/models"
 	"github.com/google/uuid"
 )
 

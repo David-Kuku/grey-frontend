@@ -7,9 +7,9 @@ import (
 	"math/rand"
 	"time"
 
-	"github.com/David-Kuku/grey-frontend/grey-backend/internal/ledger"
-	"github.com/David-Kuku/grey-frontend/grey-backend/internal/models"
-	"github.com/David-Kuku/grey-frontend/grey-backend/internal/repository"
+	"github.com/David-Kuku/kuku-kite-app/grey-backend/internal/ledger"
+	"github.com/David-Kuku/kuku-kite-app/grey-backend/internal/models"
+	"github.com/David-Kuku/kuku-kite-app/grey-backend/internal/repository"
 	"github.com/google/uuid"
 	"github.com/redis/go-redis/v9"
 	bullmq "go.codycody31.dev/gobullmq"

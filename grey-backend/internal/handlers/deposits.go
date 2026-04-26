@@ -5,10 +5,10 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/David-Kuku/grey-frontend/grey-backend/internal/ledger"
-	"github.com/David-Kuku/grey-frontend/grey-backend/internal/middleware"
-	"github.com/David-Kuku/grey-frontend/grey-backend/internal/models"
-	"github.com/David-Kuku/grey-frontend/grey-backend/internal/repository"
+	"github.com/David-Kuku/kuku-kite-app/grey-backend/internal/ledger"
+	"github.com/David-Kuku/kuku-kite-app/grey-backend/internal/middleware"
+	"github.com/David-Kuku/kuku-kite-app/grey-backend/internal/models"
+	"github.com/David-Kuku/kuku-kite-app/grey-backend/internal/repository"
 )
 
 type DepositHandler struct {
