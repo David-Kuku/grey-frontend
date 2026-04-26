@@ -10,7 +10,7 @@ A cross-border payments prototype with a double-entry ledger, FX conversion engi
 
 ```bash
 git clone https://github.com/David-Kuku/grey-frontend.git
-cd grey-frontend
+cd grey-frontend ( pardon me, i originally named the mono repo grey-frontend cos i was initially planning on having two different repos, but this is the repo housing the FE and BE)
 docker compose up --build
 ```
 
