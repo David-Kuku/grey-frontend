@@ -140,20 +140,6 @@ CREATE TABLE fx_rate_cache (
     UNIQUE (base_currency, target_currency)
 );
 
-CREATE TABLE audit_log (
-    id          UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    user_id     UUID REFERENCES users(id),
-    action      TEXT NOT NULL,
-    entity_type TEXT NOT NULL,
-    entity_id   UUID NOT NULL,
-    request_id  TEXT,
-    ip_address  INET,
-    payload     JSONB NOT NULL DEFAULT '{}',
-    created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
-);
-
-CREATE INDEX idx_audit_log_entity ON audit_log (entity_type, entity_id);
-CREATE INDEX idx_audit_log_user ON audit_log (user_id);
 
 CREATE OR REPLACE FUNCTION verify_balance(p_wallet_id UUID, p_currency currency_code)
 RETURNS BIGINT AS $$

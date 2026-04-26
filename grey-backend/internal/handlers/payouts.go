@@ -142,8 +142,11 @@ func (h *PayoutHandler) CreatePayout(w http.ResponseWriter, r *http.Request) {
 			break
 		}
 	}
+	reqID := middleware.GetRequestID(r.Context())
 	if err := h.payoutService.EnqueuePayout(r.Context(), p.ID); err != nil {
-		h.logger.Error("failed to enqueue payout job", "error", err, "payout_id", p.ID)
+		h.logger.Error("failed to enqueue payout job", "error", err, "payout_id", p.ID, "request_id", reqID)
+	} else {
+		h.logger.Info("payout created and enqueued", "payout_id", p.ID, "user_id", userID, "request_id", reqID)
 	}
 
 	respondJSON(w, http.StatusCreated, models.PayoutResponse{

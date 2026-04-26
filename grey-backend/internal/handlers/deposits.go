@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"log/slog"
 	"net/http"
 	"strings"
 
@@ -13,10 +14,11 @@ import (
 type DepositHandler struct {
 	repo          *repository.Repository
 	ledgerService *ledger.Service
+	logger        *slog.Logger
 }
 
-func NewDepositHandler(repo *repository.Repository, ledgerService *ledger.Service) *DepositHandler {
-	return &DepositHandler{repo: repo, ledgerService: ledgerService}
+func NewDepositHandler(repo *repository.Repository, ledgerService *ledger.Service, logger *slog.Logger) *DepositHandler {
+	return &DepositHandler{repo: repo, ledgerService: ledgerService, logger: logger}
 }
 func (h *DepositHandler) CreateDeposit(w http.ResponseWriter, r *http.Request) {
 	userID := middleware.GetUserID(r.Context())
@@ -81,6 +83,7 @@ func (h *DepositHandler) CreateDeposit(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	h.logger.Info("deposit created", "transaction_id", txn.ID, "user_id", userID, "currency", req.Currency, "amount", req.Amount, "request_id", middleware.GetRequestID(r.Context()))
 	respondJSON(w, http.StatusCreated, models.DepositResponse{
 		Transaction: *txn,
 	})

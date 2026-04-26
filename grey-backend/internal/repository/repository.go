@@ -397,19 +397,3 @@ func (r *Repository) GetTransactionHistory(ctx context.Context, userID uuid.UUID
 	return txns, total, nil
 }
 
-func (r *Repository) CreateAuditLog(ctx context.Context, userID *uuid.UUID, action, entityType string, entityID uuid.UUID, requestID string, payload interface{}) error {
-	payloadJSON, err := json.Marshal(payload)
-	if err != nil {
-		payloadJSON = []byte("{}")
-	}
-
-	_, err = r.db.ExecContext(ctx,
-		`INSERT INTO audit_log (user_id, action, entity_type, entity_id, request_id, payload)
-		 VALUES ($1, $2, $3, $4, $5, $6)`,
-		userID, action, entityType, entityID, requestID, payloadJSON,
-	)
-	if err != nil {
-		return fmt.Errorf("create audit log: %w", err)
-	}
-	return nil
-}

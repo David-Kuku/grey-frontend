@@ -77,9 +77,9 @@ func (s *Server) setupRoutes() {
 			s.Logger.Error("payout worker stopped", "error", err)
 		}
 	}()
-	authHandler := handlers.NewAuthHandler(repo, authService)
-	depositHandler := handlers.NewDepositHandler(repo, ledgerService)
-	conversionHandler := handlers.NewConversionHandler(repo, fxService, ledgerService)
+	authHandler := handlers.NewAuthHandler(repo, authService, s.Logger)
+	depositHandler := handlers.NewDepositHandler(repo, ledgerService, s.Logger)
+	conversionHandler := handlers.NewConversionHandler(repo, fxService, ledgerService, s.Logger)
 	payoutHandler := handlers.NewPayoutHandler(repo, ledgerService, payoutService, s.Logger)
 	walletHandler := handlers.NewWalletHandler(repo)
 	conversionLimiter := appMiddleware.NewPerUserRateLimiter(appMiddleware.RateLimiterConfig{

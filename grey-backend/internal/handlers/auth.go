@@ -2,11 +2,13 @@ package handlers
 
 import (
 	"database/sql"
+	"log/slog"
 	"net/http"
 	"regexp"
 	"strings"
 
 	"github.com/David-Kuku/grey-frontend/grey-backend/internal/auth"
+	"github.com/David-Kuku/grey-frontend/grey-backend/internal/middleware"
 	"github.com/David-Kuku/grey-frontend/grey-backend/internal/models"
 	"github.com/David-Kuku/grey-frontend/grey-backend/internal/repository"
 )
@@ -14,10 +16,11 @@ import (
 type AuthHandler struct {
 	repo        *repository.Repository
 	authService *auth.Service
+	logger      *slog.Logger
 }
 
-func NewAuthHandler(repo *repository.Repository, authService *auth.Service) *AuthHandler {
-	return &AuthHandler{repo: repo, authService: authService}
+func NewAuthHandler(repo *repository.Repository, authService *auth.Service, logger *slog.Logger) *AuthHandler {
+	return &AuthHandler{repo: repo, authService: authService, logger: logger}
 }
 
 var emailRegex = regexp.MustCompile(`^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$`)
@@ -79,6 +82,7 @@ func (h *AuthHandler) Signup(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	h.logger.Info("user registered", "user_id", user.ID, "request_id", middleware.GetRequestID(r.Context()))
 	respondJSON(w, http.StatusCreated, user)
 }
 func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
@@ -116,6 +120,7 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	h.logger.Info("user logged in", "user_id", user.ID, "request_id", middleware.GetRequestID(r.Context()))
 	respondJSON(w, http.StatusOK, models.AuthResponse{
 		Token: token,
 		User:  *user,

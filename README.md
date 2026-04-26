@@ -74,17 +74,18 @@ cd grey-backend && make test
                       │  │  users ── wallets ── wallet_balances │     │
                       │  │       transactions ── ledger_entries │     │
                       │  │  fx_quotes  payouts  fx_rate_cache  │     │
-                      │  │           audit_log                 │     │
                       │  └─────────────────────────────────────┘     │
                       └──────────────────────────────────────────────┘
 ```
 
 **Backend — three layers:**
+
 - **Handlers** — HTTP concerns: parse, validate, call services, respond.
 - **Services** — Business logic: Ledger (double-entry), FX (rates/quotes), Payout (state machine + BullMQ worker).
 - **Repository** — Data access: all SQL in one place, `sqlx` with parameterised queries.
 
 **Frontend — MVVM:**
+
 - **Pages** — Pure JSX, no logic, just layout and rendering.
 - **ViewModels** (`useXxxView` hooks) — All state, mutations, and derived data.
 - **Services / Queries** — Axios calls wrapped in TanStack Query hooks.
@@ -210,30 +211,32 @@ Codes: `VALIDATION_ERROR`, `INVALID_CREDENTIALS`, `EMAIL_EXISTS`, `INSUFFICIENT_
 
 ## Trade-offs
 
-**FX rates:** Frankfurter (free, no key). Production: paid provider + Redis cache with single-flight pattern.
+**Payout worker shares a process with the API.** The background worker that processes payouts runs inside the same Go process as the HTTP server. Simple to run, but means you can't scale one without the other. In production you'd run the worker as a separate service, the queue is already in Redis so no code change is needed, just a different deployment.
 
-**Payout simulation:** BullMQ worker in the same process as the API — worker state survives restarts (jobs persist in Redis), but worker and API scaling are coupled. Production: dedicated worker pods consuming from the same Redis queue.
+**Access tokens last 24 hours.** The current JWT expiry is 24 hours which a long window for a financial app. If a token is stolen, it's valid for up to a day with no way to revoke it. What i would do is to use short-lived access tokens (15 min) paired with a refresh token stored in the database. The short expiry limits the damage window, and revoking the refresh token on logout immediately cuts off access.
 
-**No migration tool:** Raw `.sql`. Production: golang-migrate or Atlas.
-
-**Quote expiry:** Checked on execute only. Production: background job to clean expired quotes.
+**Expired quotes are never deleted.** When a user gets a quote but doesn't confirm it, that row sits in `fx_quotes` forever. It won't cause bugs as expired quotes are rejected on execute but the table grows indefinitely. A nightly cleanup query would fix it; skipped here to keep the system simple.
 
 ---
 
 ## Scaling to 1M Users
 
-1. **DB connections** — PgBouncer + read replicas for balance reads / transaction history.
-2. **Hot row on house account** — Shard the house FX pool account or use event sourcing.
-3. **FX cache stampede** — Redis + singleflight so one goroutine fetches, others wait.
-4. **Payout workers** — Split into dedicated pods consuming from the Redis queue.
-5. **Transaction history** — Cursor pagination (keyset on `(created_at, id)`), table partitioning.
-6. **Audit log** — Partition by month, archive to S3 after 90 days.
+**What breaks first: database connections.**
+
+The API holds a Postgres connection whenever a request interacts with the database, especially during transactions, which causes the connection pool to fill up quickly under load. With Postgres defaulting to around 100 connections, this limit is easily reached as the system scales. At higher scale, like handling millions in traffic, adding more API instances only increases the number of connections and worsens the bottleneck. PgBouncer solves this by sitting between the API and Postgres and reusing a small pool of database connections efficiently, preventing exhaustion while supporting high traffic.
+
+Fix: put PgBouncer in front of Postgres in transaction-pooling mode. Connections are returned to the pool between statements, so hundreds of API instances share a small pool of real Postgres connections.
+
+**What breaks second: FX rate cache stampede.**
+
+When the Redis cache expires, concurrent quote requests all see a cache miss simultaneously and pile onto the Frankfurter API — the same rate fetched hundreds of times at once, risking rate-limit errors.
+
+Fix: wrap the fetch in `singleflight` (`golang.org/x/sync/singleflight`). Only one goroutine fetches; the rest block and share the result. One external call per cache miss regardless of concurrency.
 
 ---
 
 ## Bonus Features
 
-- **Audit log** — Immutable `audit_log` table with request IDs threading through the lifecycle.
 - **Observability** — Structured JSON logging via `slog`, request ID on every log line and response header.
 - **Per-user rate limiting** — Token bucket (via `golang.org/x/time/rate`) scoped per user ID, not IP. Separate limits for conversions (5 rps / burst 10) and payouts (3 rps / burst 5).
 

@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"log/slog"
 	"net/http"
 	"time"
 
@@ -16,10 +17,11 @@ type ConversionHandler struct {
 	repo          *repository.Repository
 	fxService     *fx.Service
 	ledgerService *ledger.Service
+	logger        *slog.Logger
 }
 
-func NewConversionHandler(repo *repository.Repository, fxService *fx.Service, ledgerService *ledger.Service) *ConversionHandler {
-	return &ConversionHandler{repo: repo, fxService: fxService, ledgerService: ledgerService}
+func NewConversionHandler(repo *repository.Repository, fxService *fx.Service, ledgerService *ledger.Service, logger *slog.Logger) *ConversionHandler {
+	return &ConversionHandler{repo: repo, fxService: fxService, ledgerService: ledgerService, logger: logger}
 }
 func (h *ConversionHandler) GetQuote(w http.ResponseWriter, r *http.Request) {
 	userID := middleware.GetUserID(r.Context())
@@ -79,6 +81,7 @@ func (h *ConversionHandler) GetQuote(w http.ResponseWriter, r *http.Request) {
 
 	expiresIn := int(time.Until(quote.ExpiresAt).Seconds())
 
+	h.logger.Info("fx quote created", "quote_id", quote.ID, "user_id", userID, "source_currency", req.SourceCurrency, "target_currency", req.TargetCurrency, "source_amount", req.SourceAmount, "request_id", middleware.GetRequestID(r.Context()))
 	respondJSON(w, http.StatusOK, models.QuoteResponse{
 		QuoteID:        quote.ID.String(),
 		SourceCurrency: quote.SourceCurrency,
@@ -189,6 +192,7 @@ func (h *ConversionHandler) ExecuteConversion(w http.ResponseWriter, r *http.Req
 		}
 	}
 
+	h.logger.Info("conversion executed", "transaction_id", txn.ID, "user_id", userID, "quote_id", quote.ID, "source_currency", quote.SourceCurrency, "target_currency", quote.TargetCurrency, "source_amount", quote.SourceAmount, "target_amount", quote.TargetAmount, "request_id", middleware.GetRequestID(r.Context()))
 	respondJSON(w, http.StatusOK, models.ExecuteConversionResponse{
 		Transaction:    *txn,
 		SourceBalance:  sourceBalance,
