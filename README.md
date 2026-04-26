@@ -28,10 +28,23 @@ cd grey-backend && make seed
 
 ## Running Tests
 
+Start the test database (schema is applied automatically on first start):
+
 ```bash
 docker compose up postgres-test -d
-psql "postgres://kite:kite@localhost:5435/kite_test?sslmode=disable" -f grey-backend/migrations/001_initial_schema.sql
+```
+
+Run the test suite:
+
+```bash
 cd grey-backend && make test
+```
+
+If you change the schema and need a clean database:
+
+```bash
+docker compose down postgres-test -v
+docker compose up postgres-test -d
 ```
 
 ---
@@ -69,10 +82,6 @@ cd grey-backend && make test
 - **Pages** — Pure JSX, no logic, just layout and rendering.
 - **ViewModels** (`useXxxView` hooks) — All state, mutations, and derived data.
 - **Services / Queries** — Axios calls wrapped in TanStack Query hooks.
-
-### Why Go + chi + sqlx
-
-`chi` is a thin stdlib-compatible router. `sqlx` over GORM because for a financial ledger you want to see and control every query — especially the `SELECT ... FOR UPDATE` locks that prevent double-spend.
 
 ### Why JWT
 
@@ -149,7 +158,7 @@ erDiagram
 
 **Money as `bigint` in minor units.** Cents for USD/EUR/GBP, kobo for NGN, cents for KES. No floating-point anywhere. `CHECK (balance >= 0)` on `wallet_balances` is a DB-level safety net; real enforcement is via the ledger service under a row lock.
 
-**Double-entry ledger.** Every operation writes ≥2 `ledger_entries` whose `signed_amount` sums to zero per currency. `wallet_balances` is a read-optimised cache rebuildable from `SUM(signed_amount)`.
+**Double-entry ledger.** For every N operation, there are 2N writes `ledger_entries` whose `signed_amount` sums to zero per currency. `wallet_balances` is a read-optimised cache rebuildable from `SUM(signed_amount)`.
 
 **FX conversions = two balanced legs.** USD→EUR creates 4 entries in 2 pairs: (1) user USD credit + house USD debit, (2) house EUR credit + user EUR debit. Each pair sums to zero within its currency.
 
@@ -191,29 +200,15 @@ Codes: `VALIDATION_ERROR`, `INVALID_CREDENTIALS`, `EMAIL_EXISTS`, `INSUFFICIENT_
 
 ## Trade-offs
 
-**Payout worker shares a process with the API.** The background worker that processes payouts runs inside the same Go process as the HTTP server. Simple to run, but means you can't scale one without the other. In production you'd run the worker as a separate service, the queue is already in Redis so no code change is needed, just a different deployment.
-
-**Access tokens last 24 hours.** The current JWT expiry is 24 hours which a long window for a financial app. If a token is stolen, it's valid for up to a day with no way to revoke it. What i would do is to use short-lived access tokens (15 min) paired with a refresh token stored in the database. The short expiry limits the damage window, and revoking the refresh token on logout immediately cuts off access.
-
-**Expired quotes are never deleted.** When a user gets a quote but doesn't confirm it, that row sits in `fx_quotes` forever. It won't cause bugs as expired quotes are rejected on execute but the table grows indefinitely. A nightly cleanup query would fix it; skipped here to keep the system simple.
-
----
+**Payout worker shares a process with the API.** The spec offered three ways to simulate async payout state transitions: a delay, a manual admin endpoint, or a background job. I chose the background job because Redis was already in the stack for FX rate caching, the queue runs on existing infrastructure with no new dependency. A `time.Sleep` goroutine would have been simpler but loses all pending jobs on a process restart; the queue survives it. The worker runs inside the same process as the HTTP server to keep the deployment minimal, but since the queue lives in Redis, splitting them into separate containers later requires no code changes.
 
 ## Scaling to 1M Users
 
-**What breaks first: database connections.**
+**What breaks first: payout queue becomes a bottleneck.**
 
-The API holds a Postgres connection whenever a request interacts with the database, especially during transactions, which causes the connection pool to fill up quickly under load. With Postgres defaulting to around 100 connections, this limit is easily reached as the system scales. At higher scale, like handling millions in traffic, adding more API instances only increases the number of connections and worsens the bottleneck. PgBouncer solves this by sitting between the API and Postgres and reusing a small pool of database connections efficiently, preventing exhaustion while supporting high traffic.
+Redis + BullMQ works fine at low volume, but Redis is single-threaded and BullMQ queues are not partitioned. As payout volume grows, a single Redis instance becomes a throughput ceiling and a single point of failure — one bad deploy or OOM and the entire payout queue stalls.
 
-Fix: put PgBouncer in front of Postgres in transaction-pooling mode. Connections are returned to the pool between statements, so hundreds of API instances share a small pool of real Postgres connections.
-
-**What breaks second: FX rate cache stampede.**
-
-When the Redis cache expires, concurrent quote requests all see a cache miss simultaneously and pile onto the Frankfurter API — the same rate fetched hundreds of times at once, risking rate-limit errors.
-
-Fix: wrap the fetch in `singleflight` (`golang.org/x/sync/singleflight`). Only one goroutine fetches; the rest block and share the result. One external call per cache miss regardless of concurrency.
-
----
+Fix: replace BullMQ with Kafka. Kafka partitions the queue across multiple brokers, so throughput scales horizontally. Multiple worker instances each consume a partition independently. It also gives you durable replay — if a worker crashes mid-processing, the offset rewinds and the job is retried without needing explicit retry logic in application code.
 
 ## Bonus Features
 
