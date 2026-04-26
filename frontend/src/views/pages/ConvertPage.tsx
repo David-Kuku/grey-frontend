@@ -45,9 +45,9 @@ export default function ConvertPage() {
                 </label>
                 <select
                   value={sourceCurrency}
-                  onChange={(e) =>
-                    setSourceCurrency(e.target.value as Currency)
-                  }
+                  onChange={(e) => {
+                    setSourceCurrency(e.target.value as Currency);
+                  }}
                   className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900 bg-white"
                 >
                   {SUPPORTED_CURRENCIES.map((c) => (
@@ -143,14 +143,15 @@ export default function ConvertPage() {
             <div className="flex justify-between">
               <span className="text-gray-500">Rate</span>
               <span className="text-gray-700">
-                1 {quote.source_currency} = {parseFloat(quote.quoted_rate).toFixed(4)}{" "}
+                1 {quote.source_currency} ={" "}
+                {parseFloat(quote.quoted_rate).toFixed(4)}{" "}
                 {quote.target_currency}
               </span>
             </div>
             <div className="flex justify-between">
               <span className="text-gray-500">Fee</span>
               <span className="text-gray-700">
-                {formatAmount(quote.fee_amount / 100, quote.source_currency)}
+                {formatAmount(quote.fee_amount / 100, quote.fee_currency)}
               </span>
             </div>
             <div className="flex justify-between text-xs text-gray-400">
